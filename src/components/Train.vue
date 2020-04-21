@@ -9,7 +9,7 @@
              x-small>
         Train
       </v-btn>
-      <h2>{{ owner }}</h2>
+      <h2>{{ owner }} <span v-if="player.pieces">({{ player.pieces.length }})</span></h2>
     </div>
     <domino v-for="piece in piecesToShow"
               :key="piece[0] + '-' + piece[1]"
@@ -43,6 +43,7 @@ export default Vue.extend({
     pieces: Array,
     showAdd: Boolean,
     disableAdd: Boolean,
+    players: Array,
   },
   computed: {
     piecesToShow() {
@@ -56,6 +57,12 @@ export default Vue.extend({
         'grey', 'orange', 'brown'];
       const index = Math.floor(Math.random() * colors.length);
       return colors[index];
+    },
+    player() {
+      if (this.players) {
+        return this.players.find((player: any) => player.name === this.owner) || {};
+      }
+      return {};
     },
   },
   methods: {
