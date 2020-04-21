@@ -3,7 +3,7 @@
     <div class="d-flex flex-column">
       <h2>{{ player.name }} ({{ player.points}} pts)</h2>
       <h3>Middle Piece</h3>
-      <domino v-if="board.middle.length"
+      <domino v-if="board.middle"
               :values="board.middle" />
       <h3>Your Train</h3>
       <train v-if="myTrain.owner"
@@ -34,21 +34,21 @@
         <v-btn class="mr-5"
                color="secondary"
                @click="draw(player)"
-               :disabled="hasPlayedOrAddedTrain && !hasPlayedDouble"
+               :disabled="!canDraw"
                width="100px">
           Draw
         </v-btn>
         <v-btn class="mr-5"
                color="secondary"
                @click="startNewTrain()"
-               :disabled="hasPlayedOrAddedTrain"
+               :disabled="!canStartNewTrain"
                width="180px">
           Start New Train
         </v-btn>
         <v-btn class="mr-5"
                color="secondary"
                @click="endTurn()"
-               :disabled="!hasPlayedOrAddedTrain"
+               :disabled="!canEndTurn"
                width="100px">
           End Turn
         </v-btn>
@@ -68,6 +68,27 @@
                 :selected="index === selectedPiece" />
       </draggable>
     </div>
+    <v-dialog v-model="unresolvedDoubleDialog" persistent max-width="600px">
+      <v-card>
+        <v-card-title>
+          <span class="headline">Unresolved Double</span>
+        </v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                You played an unresolved double. Are you sure you want to end your turn?
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="unresolvedDoubleDialog = false">Cancel</v-btn>
+          <v-btn color="blue darken-1" text @click="endTurn()">Yes</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-snackbar
       v-model="snackbar.show"
       :timeout="snackbar.timeout"
@@ -87,8 +108,11 @@
 <script lang="ts">
 import Vue from 'vue';
 import draggable from 'vuedraggable';
+import cloneDeep from 'lodash/cloneDeep';
 import Domino from './Domino.vue';
 import Train from './Train.vue';
+import { Board, Player, Piece } from '../interfaces/Game.interfaces';
+import { TRAIN } from '../interfaces/Game.constants';
 
 export default Vue.extend({
   name: 'Game',
@@ -98,21 +122,23 @@ export default Vue.extend({
     Domino,
   },
   props: {
-    board: Object as () => any,
-    player: Object as () => any,
-    players: Array as () => any[],
-    pool: Array as () => number[][],
+    board: Object as () => Board,
+    player: Object as () => Player,
+    players: Array as () => Player[],
+    pool: Array as () => Piece[],
     pieces: Number,
   },
   data: () => ({
     selectedPiece: -1,
     hasPlayedOrAddedTrain: false,
     hasPlayedDouble: false,
+    hasDrawn: false,
     snackbar: {
       show: false,
       text: '',
       timeout: 5000,
     },
+    unresolvedDoubleDialog: false,
   }),
 
   methods: {
@@ -123,30 +149,41 @@ export default Vue.extend({
       // eslint-disable-next-line no-param-reassign
       player.points += (piece[0] + piece[1]);
       this.pool.splice(index, 1);
+      this.hasDrawn = true;
     },
     addTrain() {
-      this.board.trains[0].hasTrain = true;
+      this.myTrain!.hasTrain = true;
       this.hasPlayedOrAddedTrain = true;
     },
     startNewTrain() {
-      this.board.trains.push({
-        hasTrain: true,
-        owner: 'Mexican',
-        pieces: [] as number[][],
-      });
+      const train = cloneDeep(TRAIN);
+      train.hasTrain = true;
+      train.owner = `Mexican${this.board.trains.length}`;
+      this.board.trains.push(train);
     },
     endTurn() {
-      if (!this.hasPlayedOrAddedTrain) {
+      if (!this.canEndTurn) {
         this.snackbar.text = 'You must play a piece or add a train.';
         this.snackbar.show = true;
+      } else if (this.hasPlayedDouble && !this.unresolvedDoubleDialog) {
+        this.unresolvedDoubleDialog = true;
       } else {
+        this.unresolvedDoubleDialog = false;
         this.hasPlayedOrAddedTrain = false;
-        this.player.isTurn = false;
+        this.hasDrawn = false;
+
+        // Find next player's turn
+        const nextPlayerId = this.player.id === this.players.length ? 1 : this.player.id + 1;
+        this.players.forEach((player: Player) => {
+          // eslint-disable-next-line no-param-reassign
+          player.isTurn = player.id === nextPlayerId;
+        });
+        this.updateGame();
       }
     },
     flipPiece(index: number) {
       const piece = this.player.pieces[index];
-      this.player.pieces.splice(index, 1, [piece[1], piece[0]]);
+      this.player.pieces.splice(index, 1, { 0: piece[1], 1: piece[0] });
     },
     selectPiece(index: number) {
       if (this.selectedPiece === index) {
@@ -158,7 +195,8 @@ export default Vue.extend({
     addToTrain(trainToAdd: any) {
       if (this.selectedPiece > -1) {
         const pieceToAdd = this.player.pieces[this.selectedPiece];
-        const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle : trainToAdd.pieces[trainToAdd.pieces.length - 1];
+        const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle
+          : trainToAdd.pieces[trainToAdd.pieces.length - 1];
         if (pieceToCompare[1] !== pieceToAdd[0]) {
           this.snackbar.text = 'Invalid move.';
           this.snackbar.show = true;
@@ -194,7 +232,7 @@ export default Vue.extend({
         }
       });
       // If highest allowable middle was not found, find out who goes first
-      if (!this.board.middle.length) {
+      if (!this.board.middle) {
         this.board.middleAllowed.slice(1).forEach((middleAllowed: number) => {
           this.players.some((player: any) => {
             player.pieces.some((piece: any, index: number) => {
@@ -209,10 +247,17 @@ export default Vue.extend({
               return player.isTurn;
             });
             // Break once a middle piece is found
-            return this.board.middle.length;
+            return !!this.board.middle;
           });
         });
       }
+    },
+    updateGame() {
+      this.$emit('updateGame', {
+        board: this.board,
+        players: this.players,
+        pool: this.pool,
+      });
     },
   },
   computed: {
@@ -222,10 +267,25 @@ export default Vue.extend({
     otherTrains() {
       return this.board.trains.filter((train: any) => train.owner !== this.player.name);
     },
+    canEndTurn() {
+      return this.hasPlayedOrAddedTrain || (this.hasDrawn && this.myTrain!.hasTrain);
+    },
+    canDraw() {
+      return !this.hasDrawn && (!this.hasPlayedOrAddedTrain || this.hasPlayedDouble);
+    },
+    canStartNewTrain() {
+      return !this.hasPlayedOrAddedTrain
+        && this.board.middle
+        // eslint-disable-next-line arrow-body-style
+        && !!this.player.pieces.find((piece: Piece) => {
+          return piece[0] === this.board.middle![0] || piece[1] === this.board.middle![1];
+        });
+    },
   },
   mounted() {
     if (this.player.isHost && this.player.pieces.length === 0) {
       this.startGame();
+      this.updateGame();
     }
   },
 

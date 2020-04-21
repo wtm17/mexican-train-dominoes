@@ -26,7 +26,7 @@
             <v-container>
               <v-row>
                 <v-col cols="12">
-                  <v-text-field :readonly="$route.params.gameId ? true : false" 
+                  <v-text-field :readonly="$route.params.gameId ? true : false"
                                 v-if="!isNewGame"
                                 v-model="gameId"
                                 label="Game Id"
@@ -40,7 +40,7 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
-            <v-btn color="blue darken-1" text @click="goToJoin()">Let's Go</v-btn>
+            <v-btn color="blue darken-1" text @click="doAction()">Let's Go</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -50,6 +50,10 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import cloneDeep from 'lodash/cloneDeep';
+import firebase from '../Firebase';
+import { GAME, PLAYER, TRAIN } from '../interfaces/Game.constants';
+import { Game, Player, Train } from '../interfaces/Game.interfaces';
 
 export default Vue.extend({
   name: 'Start',
@@ -58,21 +62,70 @@ export default Vue.extend({
     return {
       gameId: this.$route.params.gameId,
       playerName: '',
+      playerId: '',
       dialog: false,
       isNewGame: false,
+      ref: firebase.firestore().collection('games'),
     };
   },
   methods: {
-    goToJoin() {
-      this.dialog = false;
+    doAction() {
+      if (this.isNewGame) {
+        this.createGame();
+      } else {
+        this.joinGame();
+      }
+    },
+    async createGame() {
+      const newGame: Game = cloneDeep(GAME);
+      const newPlayer: Player = cloneDeep(PLAYER);
+      newPlayer.name = this.playerName;
+      newPlayer.isHost = true;
+      newPlayer.id = 1;
+      newGame.players.push(newPlayer);
+      const newTrain: Train = cloneDeep(TRAIN);
+      newTrain.owner = this.playerName;
+      newGame.board.trains.push(newTrain);
+
+      const docRef = await this.ref.add(newGame);
+      this.gameId = docRef.id;
+      this.playerId = newPlayer.id.toString();
+      this.goToJoinPage();
+    },
+    async joinGame() {
+      const docRef = this.ref.doc(this.gameId);
+      const doc = await docRef.get();
+      if (doc.exists) {
+        const game: Game = doc.data() as Game;
+        const newPlayer: Player = cloneDeep(PLAYER);
+        newPlayer.name = this.playerName;
+        newPlayer.id = game.players.length + 1;
+        game.players.push(newPlayer);
+        const newTrain: Train = cloneDeep(TRAIN);
+        newTrain.owner = this.playerName;
+        game.board.trains.push(newTrain);
+
+        await docRef.set(game);
+        this.playerId = newPlayer.id.toString();
+        this.goToJoinPage();
+      }
+    },
+    goToJoinPage() {
       this.$router.push({
         name: 'join',
         params: {
           gameId: this.gameId,
-          playerId: '0',
+          playerId: this.playerId,
         },
       });
+      this.dialog = false;
     },
+  },
+  mounted() {
+    if (this.$route.params.gameId) {
+      this.isNewGame = false;
+      this.dialog = true;
+    }
   },
 
 });

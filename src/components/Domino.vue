@@ -39,12 +39,13 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import { Piece } from '../interfaces/Game.interfaces';
 
 export default Vue.extend({
   name: 'Domino',
 
   props: {
-    values: Array,
+    values: Object as () => Piece,
     selected: Boolean,
     index: Number,
     flippable: Boolean,
