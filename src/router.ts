@@ -1,13 +1,38 @@
 import Vue from 'vue';
 import Router from 'vue-router';
 import Home from './views/Home.vue';
+import GameView from './views/GameView.vue';
+import Start from './views/Start.vue';
+import Join from './views/Join.vue';
 
 Vue.use(Router);
 
 export default new Router({
+  mode: 'history',
   routes: [
     {
       path: '/',
+      redirect: {
+        name: 'start',
+      },
+    },
+    {
+      path: '/start/:gameId?',
+      name: 'start',
+      component: Start,
+    },
+    {
+      path: '/join/:gameId/:playerId',
+      name: 'join',
+      component: Join,
+    },
+    {
+      path: '/game/play/:gameId/:playerId',
+      name: 'game',
+      component: GameView,
+    },
+    {
+      path: '/home',
       name: 'home',
       component: Home,
     },
