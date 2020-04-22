@@ -38,7 +38,8 @@ export default Vue.extend({
   computed: {
     player() {
       if (this.isGameLoaded) {
-        return this.game.players.find((player: any) => player.id === +this.$route.params.playerId);
+        const vm = this as any;
+        return vm.game.players.find((player: any) => player.id === +this.$route.params.playerId);
       }
       return {};
     },

@@ -270,7 +270,8 @@ export default Vue.extend({
       return this.board.trains.filter((train: any) => train.owner !== this.player.name);
     },
     canEndTurn() {
-      return this.hasPlayedOrAddedTrain || (this.hasDrawn && this.myTrain!.hasTrain);
+      const vm = this as any;
+      return this.hasPlayedOrAddedTrain || (this.hasDrawn && vm.myTrain.hasTrain);
     },
     canDraw() {
       return !this.hasDrawn && (!this.hasPlayedOrAddedTrain || this.hasPlayedDouble);
