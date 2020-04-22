@@ -66,7 +66,7 @@ export default Vue.extend({
     player() {
       if (this.game.players) {
         const vm = this as any;
-        return vm.players.find((player: any) => player.id === +this.$route.params.playerId);
+        return vm.game.players.find((player: any) => player.id === +this.$route.params.playerId);
       }
       return {};
     },
