@@ -55,12 +55,12 @@
           End Turn
         </v-btn>
       </div>
-      <draggable v-model="player.pieces"
+      <draggable v-model="myPieces"
                 class="d-inline-flex flex-wrap"
                 group="pieces"
                 @start="drag=true"
                 @end="drag=false">
-        <domino v-for="(piece, index) in player.pieces"
+        <domino v-for="(piece, index) in myPieces"
                 :key="piece[0] + '-' + piece[1]"
                 @selectPiece="selectPiece"
                 @flipPiece="flipPiece"
@@ -141,6 +141,7 @@ export default Vue.extend({
       timeout: 5000,
     },
     unresolvedDoubleDialog: false,
+    myPieces: [] as Piece[],
   }),
 
   methods: {
@@ -184,8 +185,8 @@ export default Vue.extend({
       }
     },
     flipPiece(index: number) {
-      const piece = this.player.pieces[index];
-      this.player.pieces.splice(index, 1, { 0: piece[1], 1: piece[0] });
+      const piece = this.myPieces[index];
+      this.myPieces.splice(index, 1, { 0: piece[1], 1: piece[0] });
     },
     selectPiece(index: number) {
       if (this.selectedPiece === index) {
@@ -196,7 +197,7 @@ export default Vue.extend({
     },
     addToTrain(trainToAdd: any) {
       if (this.selectedPiece > -1) {
-        const pieceToAdd = this.player.pieces[this.selectedPiece];
+        const pieceToAdd = this.myPieces[this.selectedPiece];
         const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle
           : trainToAdd.pieces[trainToAdd.pieces.length - 1];
         if (pieceToCompare[1] !== pieceToAdd[0]) {
@@ -208,7 +209,7 @@ export default Vue.extend({
             // eslint-disable-next-line no-param-reassign
             trainToAdd.hasTrain = false;
           }
-          this.player.pieces.splice(this.selectedPiece, 1);
+          this.myPieces.splice(this.selectedPiece, 1);
           this.player.points -= (pieceToAdd[0] + pieceToAdd[1]);
           this.selectedPiece = -1;
           this.hasPlayedOrAddedTrain = true;
@@ -255,6 +256,7 @@ export default Vue.extend({
       }
     },
     updateGame() {
+      this.player.pieces = this.myPieces;
       this.$emit('updateGame', {
         board: this.board,
         players: this.players,
@@ -280,7 +282,7 @@ export default Vue.extend({
       return !this.hasPlayedOrAddedTrain
         && this.board.middle
         // eslint-disable-next-line arrow-body-style
-        && !!this.player.pieces.find((piece: Piece) => {
+        && !!this.myPieces.find((piece: Piece) => {
           return piece[0] === this.board.middle![0] || piece[1] === this.board.middle![1];
         });
     },
@@ -290,6 +292,16 @@ export default Vue.extend({
       this.startGame();
       this.updateGame();
     }
+  },
+  watch: {
+    player: {
+      immediate: true,
+      handler(player: Player) {
+        if (this.myPieces.length === 0 && player.pieces.length > 0) {
+          this.myPieces = cloneDeep(player.pieces);
+        }
+      },
+    },
   },
 
 });
