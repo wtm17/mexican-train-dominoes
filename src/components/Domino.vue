@@ -71,7 +71,7 @@ export default Vue.extend({
 .domino {
   width: 150px;
   height: 70px;
-  margin: 10px;
+  margin: 10px 0;
   position: relative;
   border: 4px solid #222;
   border-radius: 12px;

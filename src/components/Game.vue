@@ -62,6 +62,7 @@
                 @end="drag=false">
         <domino v-for="(piece, index) in myPieces"
                 :key="piece[0] + '-' + piece[1]"
+                class="mr-5"
                 @selectPiece="selectPiece"
                 @flipPiece="flipPiece"
                 :flippable="true"

@@ -1,6 +1,6 @@
 <template>
   <div class="train d-inline-flex flex-wrap align-center">
-    <div class="d-flex flex-column">
+    <div class="d-flex flex-column mr-5">
       <v-icon v-if="hasTrain" :color="trainColor" dark>mdi-train</v-icon>
       <v-btn v-else-if="isOwner && showAdd"
              :disabled="disableAdd"
@@ -16,8 +16,7 @@
               :values="piece" />
     <v-btn fab
            v-if="showAdd && canPlayOnTrain"
-           class="ml-10"
-           x-large
+           class="ml-5"
            :disabled="disableAdd"
            color="primary"
            @click="addToTrain()">
@@ -78,7 +77,7 @@ export default Vue.extend({
 
 <style scoped lang="scss">
 .train {
-  min-height: 120px;
+  min-height: 70px;
   margin: 10px;
 }
 </style>
