@@ -308,7 +308,7 @@ export default Vue.extend({
 
 <style scoped>
   .actions {
-    position: absolute;
+    position: fixed;
     right: 20px;
     width: 200px;
   }
