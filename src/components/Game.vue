@@ -1,7 +1,34 @@
 <template>
   <div>
     <div class="d-flex flex-column">
-      <h2>{{ player.name }} ({{ player.points}} pts)</h2>
+      <div class="actions">
+        <div class="d-flex flex-column" v-if="player.isTurn">
+          <v-chip class="turn-chip"
+                  color="pink"
+                  label
+                  text-color="white">
+            It's your turn!
+          </v-chip>
+          <v-btn class="mt-1"
+                color="secondary"
+                @click="draw(player)"
+                :disabled="!canDraw">
+            Draw
+          </v-btn>
+          <v-btn class="mt-1"
+                color="secondary"
+                @click="startNewTrain()"
+                :disabled="!canStartNewTrain">
+            Start New Train
+          </v-btn>
+          <v-btn class="mt-1"
+                color="secondary"
+                @click="endTurn()"
+                :disabled="!canEndTurn">
+            End Turn
+          </v-btn>
+        </div>
+      </div>
       <h3>Middle Piece</h3>
       <domino v-if="board.middle"
               :values="board.middle" />
@@ -30,31 +57,8 @@
             @addToTrain="addToTrain(train)"
       />
     </div>
+    <h3>Your Pieces ({{ player.points}} pts)</h3>
     <div class="d-flex flex-column">
-      <h2 v-if="player.isTurn">It's your turn!</h2>
-      <div class="d-flex-inline flex-wrap" v-if="player.isTurn">
-        <v-btn class="mr-5"
-               color="secondary"
-               @click="draw(player)"
-               :disabled="!canDraw"
-               width="100px">
-          Draw
-        </v-btn>
-        <v-btn class="mr-5"
-               color="secondary"
-               @click="startNewTrain()"
-               :disabled="!canStartNewTrain"
-               width="180px">
-          Start New Train
-        </v-btn>
-        <v-btn class="mr-5"
-               color="secondary"
-               @click="endTurn()"
-               :disabled="!canEndTurn"
-               width="100px">
-          End Turn
-        </v-btn>
-      </div>
       <draggable v-model="myPieces"
                 class="d-inline-flex flex-wrap"
                 group="pieces"
@@ -307,3 +311,11 @@ export default Vue.extend({
 
 });
 </script>
+
+<style scoped>
+  .actions {
+    position: absolute;
+    right: 20px;
+    width: 200px;
+  }
+</style>

@@ -9,7 +9,11 @@
              x-small>
         Train
       </v-btn>
-      <h2>{{ owner }} <span v-if="player.pieces">({{ player.pieces.length }})</span></h2>
+      <h2>
+        <v-icon color="pink" v-if="player.isTurn">mdi-star</v-icon>
+        {{ owner }}
+        <span v-if="player.pieces">({{ player.pieces.length }})</span>
+      </h2>
     </div>
     <domino v-for="piece in piecesToShow"
               :key="piece[0] + '-' + piece[1]"
@@ -79,5 +83,9 @@ export default Vue.extend({
 .train {
   min-height: 70px;
   margin: 10px;
+  .active {
+    border: 5px solid green;
+    box-sizing: border-box;
+  }
 }
 </style>
