@@ -179,6 +179,7 @@ export default Vue.extend({
         this.unresolvedDoubleDialog = false;
         this.hasPlayedOrAddedTrain = false;
         this.hasDrawn = false;
+        this.hasPlayedDouble = false;
 
         // Find next player's turn
         const nextPlayerId = this.player.id === this.players.length ? 1 : this.player.id + 1;
@@ -224,41 +225,34 @@ export default Vue.extend({
     },
     startGame() {
       // Draw pieces
+      const highestDouble = {
+        piece: {} as Piece,
+        pieceIndex: 0,
+        player: {} as Player,
+      };
       this.players.forEach((player: any) => {
         for (let i = 0; i < this.pieces; i += 1) {
           this.draw(player);
-          // Check if piece is highest allowable middle
+          // Check if piece is highest double
           const piece = player.pieces[player.pieces.length - 1];
-          if (piece[0] === piece[1] && piece[0] === this.board.middleAllowed[0]) {
-            this.board.middle = piece;
-            // eslint-disable-next-line no-param-reassign
-            player.isTurn = true;
-            player.pieces.splice(-1, 1);
-            // eslint-disable-next-line no-param-reassign
-            player.points -= (piece[0] + piece[1]);
+          if (piece[0] === piece[1] && piece[0] > (highestDouble.piece[0] || 0)) {
+            highestDouble.piece = piece;
+            highestDouble.player = player;
+            highestDouble.pieceIndex = i;
           }
         }
       });
-      // If highest allowable middle was not found, find out who goes first
-      if (!this.board.middle) {
-        this.board.middleAllowed.slice(1).forEach((middleAllowed: number) => {
-          this.players.some((player: any) => {
-            player.pieces.some((piece: any, index: number) => {
-              if (piece[0] === piece[1] && piece[0] === middleAllowed) {
-                this.board.middle = piece;
-                // eslint-disable-next-line no-param-reassign
-                player.isTurn = true;
-                player.pieces.splice(index, 1);
-                // eslint-disable-next-line no-param-reassign
-                player.points -= (piece[0] + piece[1]);
-              }
-              return player.isTurn;
-            });
-            // Break once a middle piece is found
-            return !!this.board.middle;
-          });
-        });
-      }
+
+      // Play the highest double
+      this.board.middle = highestDouble.piece;
+      // eslint-disable-next-line no-param-reassign
+      highestDouble.player.isTurn = true;
+      highestDouble.player.pieces.splice(highestDouble.pieceIndex, 1);
+      // eslint-disable-next-line no-param-reassign
+      highestDouble.player.points -= (highestDouble.piece[0] + highestDouble.piece[1]);
+
+      // Set My Pieces
+      this.myPieces = cloneDeep(this.player.pieces);
     },
     updateGame() {
       this.player.pieces = this.myPieces;

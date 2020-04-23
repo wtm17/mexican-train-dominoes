@@ -6,7 +6,6 @@ export interface Game {
 
 export interface Board {
   middle?: Piece;
-  middleAllowed: number[];
   trains: Train[],
 }
 
