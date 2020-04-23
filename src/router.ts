@@ -4,6 +4,7 @@ import Home from './views/Home.vue';
 import GameView from './views/GameView.vue';
 import Start from './views/Start.vue';
 import Join from './views/Join.vue';
+import Dominos from './views/Dominos.vue';
 
 Vue.use(Router);
 
@@ -25,6 +26,11 @@ export default new Router({
       path: '/join/:gameId/:playerId',
       name: 'join',
       component: Join,
+    },
+    {
+      path: '/dominos',
+      name: 'dominos',
+      component: Dominos,
     },
     {
       path: '/game/play/:gameId/:playerId',

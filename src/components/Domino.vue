@@ -24,7 +24,7 @@
       v-if="flippable"
       @click.stop="flip()"
       color="primary"
-      class="mr-n8"
+      class="mr-n9"
       dark
       x-small
       absolute
@@ -69,11 +69,11 @@ export default Vue.extend({
 
 <style scoped lang="scss">
 .domino {
-  width: 225px;
-  height: 100px;
+  width: 150px;
+  height: 70px;
   margin: 10px;
   position: relative;
-  border: 6px solid #222;
+  border: 4px solid #222;
   border-radius: 12px;
   background-color: #FFFFFF;
   cursor: pointer;
@@ -88,10 +88,10 @@ export default Vue.extend({
     height: 100%;
   }
   .left-half {
-    border-right: 3px solid #222;
+    border-right: 2px solid #222;
   }
   .right-half {
-    border-left: 3px solid #222;
+    border-left: 2px solid #222;
   }
 
   .dot-container {
@@ -99,16 +99,16 @@ export default Vue.extend({
     box-sizing: border-box;
     width: 100%;
     height: 100%;
-    padding: 7px 5px 7px 0;
+    padding: 5px 6px 5px 0;
   }
   .dot {
     position: relative;
-    width: 15px;
-    height: 15px;
+    width: 10px;
+    height: 10px;
     background-color: black;
     border-radius: 50%;
     float: right;
-    margin: 5px 4px;
+    margin: 4px 2px;
   }
   .dot-container-9,
   .dot-container-8,
@@ -120,9 +120,9 @@ export default Vue.extend({
   .dot-container-2,
   .dot-container-1 {
     .dot {
-      width: 20px;
-      height: 20px;
-      margin: 3px 6px;
+      width: 14px;
+      height: 14px;
+      margin: 2px 3px;
     }
   }
 
@@ -132,11 +132,8 @@ export default Vue.extend({
     }
   }
   .dot-container-11 {
-    .dot:nth-child(5) {
-      margin-left: 15px;
-    }
-    .dot:nth-child(6) {
-      margin-left: 15px;
+    .dot:nth-child(5), .dot:nth-child(6) {
+      margin-left: 9px;
     }
   }
   .dot-container-10 {
@@ -144,7 +141,7 @@ export default Vue.extend({
       background-color: #ff6600;
     }
     .dot:nth-child(5) {
-      margin-left: 50px;
+      margin-left: 30px;
     }
   }
   .dot-container-9 {
@@ -162,7 +159,7 @@ export default Vue.extend({
       background-color: #003300;
     }
     .dot:nth-child(4) {
-      margin-left: 38px;
+      margin-left: 23px;
     }
   }
   .dot-container-7 {
@@ -170,8 +167,8 @@ export default Vue.extend({
       background-color: #404040;
     }
     .dot:nth-child(4) {
-      margin-right: 38px;
-      margin-left: 30px;
+      margin-right: 23px;
+      margin-left: 20px;
     }
   }
   .dot-container-6 {
@@ -179,7 +176,7 @@ export default Vue.extend({
       background-color: #ffd11a;
     }
     .dot:nth-child(4), .dot:nth-child(5), .dot:nth-child(6) {
-      margin-top: 25px;
+      margin-top: 18px;
     }
   }
   .dot-container-5 {
@@ -188,14 +185,14 @@ export default Vue.extend({
       background-color: #000080;
     }
     .dot:nth-child(1) {
-      margin-left: 35px;
+      margin-left: 20px;
     }
     .dot:nth-child(3) {
-      margin-right: 35px;
+      margin-right: 21px;
       margin-left: 20px;
     }
     .dot:nth-child(4) {
-      margin-left: 35px;
+      margin-left: 20px;
     }
   }
   .dot-container-4 {
@@ -203,14 +200,13 @@ export default Vue.extend({
       background-color: #996633;
     }
     .dot:nth-child(1) {
-      margin-left: 35px;
+      margin-left: 20px;
     }
     .dot:nth-child(3) {
-      margin-top: 25px;
-      margin-left: 35px;
+      margin-left: 20px;
     }
-    .dot:nth-child(4) {
-      margin-top: 25px;
+    .dot:nth-child(3), .dot:nth-child(4) {
+      margin-top: 18px;
     }
   }
   .dot-container-3 {
@@ -218,10 +214,10 @@ export default Vue.extend({
       background-color: #800060;
     }
     .dot:nth-child(1) {
-      margin-right: 65px;
+      margin-right: 45px;
     }
     .dot:nth-child(2) {
-      margin-right: 35px;
+      margin-right: 23px;
       margin-left: 20px;
     }
   }
@@ -230,10 +226,10 @@ export default Vue.extend({
       background-color: #003300;
     }
     .dot:nth-child(1) {
-      margin-right: 65px;
+      margin-right: 40px;
     }
     .dot:last-child {
-      margin-top: 25px;
+      margin-top: 18px;
       margin-left: 30px;
     }
   }
@@ -242,8 +238,8 @@ export default Vue.extend({
       background-color: #0052cc;
     }
     .dot:nth-child(1) {
-      margin-top: 25px;
-      margin-right: 35px;
+      margin-top: 18px;
+      margin-right: 21px;
     }
   }
 }
