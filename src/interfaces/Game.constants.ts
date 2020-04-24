@@ -21,6 +21,7 @@ export const PLAYER: Player = {
   id: 1,
   isHost: false,
   isTurn: false,
+  isWinner: false,
   name: '',
   pieces: [],
   points: 0,

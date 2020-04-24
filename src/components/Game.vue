@@ -96,6 +96,26 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="winner.isWinner" width="500">
+      <v-card>
+        <v-card-title class="headline green white--text darken-2" primary-title>
+          {{ winner.name }} Wins!
+        </v-card-title>
+        <v-card-text class="pa-5">
+          <h3 class="overline">Results</h3>
+          <v-divider></v-divider>
+          <ol>
+            <li v-for="player in finalRankings" :key="player.id" class="title">
+              {{ player.name }} - {{ player.points }}pts
+            </li>
+          </ol>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="endGame()">End Game</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-snackbar
       v-model="snackbar.show"
       :timeout="snackbar.timeout"
@@ -116,6 +136,7 @@
 import Vue from 'vue';
 import draggable from 'vuedraggable';
 import cloneDeep from 'lodash/cloneDeep';
+import sortBy from 'lodash/sortBy';
 import Domino from './Domino.vue';
 import Train from './Train.vue';
 import { Board, Player, Piece } from '../interfaces/Game.interfaces';
@@ -181,14 +202,25 @@ export default Vue.extend({
         this.hasDrawn = false;
         this.hasPlayedDouble = false;
 
-        // Find next player's turn
-        const nextPlayerId = this.player.id === this.players.length ? 1 : this.player.id + 1;
-        this.players.forEach((player: Player) => {
-          // eslint-disable-next-line no-param-reassign
-          player.isTurn = player.id === nextPlayerId;
-        });
+        // Check if player has won
+        if (this.myPieces.length === 0) {
+          this.player.isWinner = true;
+          this.player.isTurn = false;
+        } else {
+          // Find next player's turn
+          const nextPlayerId = this.player.id === this.players.length ? 1 : this.player.id + 1;
+          this.players.forEach((player: Player) => {
+            // eslint-disable-next-line no-param-reassign
+            player.isTurn = player.id === nextPlayerId;
+          });
+        }
         this.updateGame();
       }
+    },
+    endGame() {
+      this.$router.push({
+        name: 'start',
+      });
     },
     flipPiece(index: number) {
       const piece = this.myPieces[index];
@@ -284,6 +316,12 @@ export default Vue.extend({
         && !!this.myPieces.find((piece: Piece) => {
           return piece[0] === this.board.middle![0] || piece[1] === this.board.middle![1];
         });
+    },
+    winner() {
+      return this.players.find((player: Player) => player.isWinner) || {};
+    },
+    finalRankings() {
+      return sortBy(this.players, ['points']);
     },
   },
   mounted() {

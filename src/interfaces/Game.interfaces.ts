@@ -19,6 +19,7 @@ export interface Player {
   id: number;
   isHost: boolean;
   isTurn: boolean;
+  isWinner: boolean;
   name: string;
   pieces: Piece[],
   points: number;
