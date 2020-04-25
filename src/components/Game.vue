@@ -32,28 +32,17 @@
       <h3>Middle Piece</h3>
       <domino v-if="board.middle"
               :values="board.middle" />
-      <h3>Your Train</h3>
-      <train v-if="myTrain.owner"
-            :has-train="myTrain.hasTrain"
-            :is-owner="true"
-            :owner="myTrain.owner"
-            :pieces="myTrain.pieces"
-            :players="players"
-            :show-add="player.isTurn"
-            :disable-add="hasPlayedOrAddedTrain && !hasPlayedDouble"
-            @addTrain="addTrain()"
-            @addToTrain="addToTrain(myTrain)"
-      />
-      <h3>Other Trains</h3>
-      <train v-for="train in otherTrains"
+      <h3>Trains</h3>
+      <train v-for="train in board.trains"
             :key="train.owner"
             :has-train="train.hasTrain"
-            :is-owner="false"
+            :is-owner="train.owner === player.name"
             :owner="train.owner"
             :pieces="train.pieces"
             :players="players"
             :show-add="player.isTurn"
             :disable-add="hasPlayedOrAddedTrain && !hasPlayedDouble"
+            @addTrain="addTrain()"
             @addToTrain="addToTrain(train)"
       />
     </div>
@@ -285,6 +274,7 @@ export default Vue.extend({
 
       // Set My Pieces
       this.myPieces = cloneDeep(this.player.pieces);
+      this.hasDrawn = false;
     },
     updateGame() {
       this.player.pieces = this.myPieces;
@@ -298,9 +288,6 @@ export default Vue.extend({
   computed: {
     myTrain() {
       return this.board.trains.find((train: any) => train.owner === this.player.name);
-    },
-    otherTrains() {
-      return this.board.trains.filter((train: any) => train.owner !== this.player.name);
     },
     canEndTurn() {
       const vm = this as any;
