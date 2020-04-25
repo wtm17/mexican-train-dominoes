@@ -96,7 +96,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="winner.isWinner" width="500">
+    <v-dialog v-model="winner.isWinner" width="500" persistent="true">
       <v-card>
         <v-card-title class="headline green white--text darken-2" primary-title>
           {{ winner.name }} Wins!

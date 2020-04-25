@@ -23,23 +23,30 @@
             <span class="headline">{{ isNewGame ? 'Start New Game' : 'Join Game' }}</span>
           </v-card-title>
           <v-card-text>
-            <v-container>
-              <v-row>
-                <v-col cols="12">
-                  <v-text-field :readonly="$route.params.gameId ? true : false"
-                                v-if="!isNewGame"
-                                v-model="gameId"
-                                label="Game Id"
-                                required>
-                  </v-text-field>
-                  <v-text-field v-model="playerName" label="Name" required></v-text-field>
-                </v-col>
-              </v-row>
-            </v-container>
+            <v-form v-model="gameForm.valid" ref="gameForm">
+              <v-container>
+                <v-row>
+                  <v-col cols="12">
+                    <v-text-field :readonly="$route.params.gameId ? true : false"
+                                  v-if="!isNewGame"
+                                  v-model="gameForm.gameId.value"
+                                  label="Game Id"
+                                  :rules="gameForm.gameId.rules"
+                                  required>
+                    </v-text-field>
+                    <v-text-field v-model="gameForm.playerName.value"
+                                  :rules="gameForm.playerName.rules"
+                                  label="Name"
+                                  required>
+                    </v-text-field>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-form>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
+            <v-btn color="blue darken-1" text @click="closeDialog()">Cancel</v-btn>
             <v-btn color="blue darken-1" text @click="doAction()">Let's Go</v-btn>
           </v-card-actions>
         </v-card>
@@ -60,49 +67,68 @@ export default Vue.extend({
 
   data() {
     return {
-      gameId: this.$route.params.gameId,
-      playerName: '',
       playerId: '',
       dialog: false,
       isNewGame: false,
       ref: firebase.firestore().collection('games'),
+      gameForm: {
+        valid: false,
+        gameId: {
+          value: this.$route.params.gameId,
+          rules: [
+            (v: string) => !!v || 'Game Id is required.',
+            (v: string) => v.match(/^[0-9a-zA-Z]+$/) || 'Please enter a valid Game Id.',
+          ],
+        },
+        playerName: {
+          value: '',
+          rules: [
+            (v: string) => !!v || 'Name is required.',
+            (v: string) => v.match(/^[0-9a-zA-Z .!,]+$/) || 'Please remove invalid characters.',
+            (v: string) => v.length <= 30 || 'Name is too long.',
+          ],
+        },
+      },
     };
   },
   methods: {
     doAction() {
-      if (this.isNewGame) {
-        this.createGame();
-      } else {
-        this.joinGame();
+      (this.$refs.gameForm as Vue).validate();
+      if (this.gameForm.valid) {
+        if (this.isNewGame) {
+          this.createGame();
+        } else {
+          this.joinGame();
+        }
       }
     },
     async createGame() {
       const newGame: Game = cloneDeep(GAME);
       const newPlayer: Player = cloneDeep(PLAYER);
-      newPlayer.name = this.playerName;
+      newPlayer.name = this.gameForm.playerName.value;
       newPlayer.isHost = true;
       newPlayer.id = 1;
       newGame.players.push(newPlayer);
       const newTrain: Train = cloneDeep(TRAIN);
-      newTrain.owner = this.playerName;
+      newTrain.owner = this.gameForm.playerName.value;
       newGame.board.trains.push(newTrain);
 
       const docRef = await this.ref.add(newGame);
-      this.gameId = docRef.id;
+      this.gameForm.gameId.value = docRef.id;
       this.playerId = newPlayer.id.toString();
       this.goToJoinPage();
     },
     async joinGame() {
-      const docRef = this.ref.doc(this.gameId);
+      const docRef = this.ref.doc(this.gameForm.gameId.value);
       const doc = await docRef.get();
       if (doc.exists) {
         const game: Game = doc.data() as Game;
         const newPlayer: Player = cloneDeep(PLAYER);
-        newPlayer.name = this.playerName;
+        newPlayer.name = this.gameForm.playerName.value;
         newPlayer.id = game.players.length + 1;
         game.players.push(newPlayer);
         const newTrain: Train = cloneDeep(TRAIN);
-        newTrain.owner = this.playerName;
+        newTrain.owner = this.gameForm.playerName.value;
         game.board.trains.push(newTrain);
 
         await docRef.set(game);
@@ -114,11 +140,15 @@ export default Vue.extend({
       this.$router.push({
         name: 'join',
         params: {
-          gameId: this.gameId,
+          gameId: this.gameForm.gameId.value,
           playerId: this.playerId,
         },
       });
       this.dialog = false;
+    },
+    closeDialog() {
+      this.dialog = false;
+      (this.$refs.gameForm as Vue).reset();
     },
   },
   mounted() {
