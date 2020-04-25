@@ -213,6 +213,7 @@ export default Vue.extend({
       });
     },
     flipPiece(piece: Piece) {
+      // eslint-disable-next-line arrow-body-style
       const pieceIndex = findIndex(this.myPieces, (p: Piece) => {
         return p[0] === piece[0] && p[1] === piece[1];
       });
@@ -294,6 +295,7 @@ export default Vue.extend({
   },
   computed: {
     selectedPieceIndex() {
+      // eslint-disable-next-line arrow-body-style
       return findIndex(this.myPieces, (piece: Piece) => {
         return this.selectedPiece[0] === piece[0] && this.selectedPiece[1] === piece[1];
       });
