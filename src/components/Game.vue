@@ -53,15 +53,14 @@
                 group="pieces"
                 @start="drag=true"
                 @end="drag=false">
-        <domino v-for="(piece, index) in myPieces"
+        <domino v-for="piece in myPieces"
                 :key="piece[0] + '-' + piece[1]"
                 class="mr-5"
-                @selectPiece="selectPiece"
-                @flipPiece="flipPiece"
+                @selectPiece="selectPiece(piece)"
+                @flipPiece="flipPiece(piece)"
                 :flippable="true"
                 :values="piece"
-                :index="index"
-                :selected="index === selectedPiece" />
+                :selected="piece[0] === selectedPiece[0] && piece[1] === selectedPiece[1]" />
       </draggable>
     </div>
     <v-dialog v-model="unresolvedDoubleDialog" persistent max-width="600px">
@@ -85,7 +84,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-dialog v-model="winner.isWinner" width="500" persistent="true">
+    <v-dialog v-model="winner.isWinner" width="500" persistent>
       <v-card>
         <v-card-title class="headline green white--text darken-2" primary-title>
           {{ winner.name }} Wins!
@@ -125,6 +124,8 @@
 import Vue from 'vue';
 import draggable from 'vuedraggable';
 import cloneDeep from 'lodash/cloneDeep';
+import isUndefined from 'lodash/isUndefined';
+import findIndex from 'lodash/findIndex';
 import sortBy from 'lodash/sortBy';
 import Domino from './Domino.vue';
 import Train from './Train.vue';
@@ -146,7 +147,7 @@ export default Vue.extend({
     pieces: Number,
   },
   data: () => ({
-    selectedPiece: -1,
+    selectedPiece: {} as Piece,
     hasPlayedOrAddedTrain: false,
     hasPlayedDouble: false,
     hasDrawn: false,
@@ -211,36 +212,42 @@ export default Vue.extend({
         name: 'start',
       });
     },
-    flipPiece(index: number) {
-      const piece = this.myPieces[index];
-      this.myPieces.splice(index, 1, { 0: piece[1], 1: piece[0] });
+    flipPiece(piece: Piece) {
+      const pieceIndex = findIndex(this.myPieces, (p: Piece) => {
+        return p[0] === piece[0] && p[1] === piece[1];
+      });
+      const flipped = { 0: piece[1], 1: piece[0] };
+      // Also my need to flip selected piece
+      if (pieceIndex === this.selectedPieceIndex) {
+        this.selectedPiece = flipped;
+      }
+      this.myPieces.splice(pieceIndex, 1, flipped);
     },
-    selectPiece(index: number) {
-      if (this.selectedPiece === index) {
-        this.selectedPiece = -1;
+    selectPiece(piece: Piece) {
+      if (this.selectedPiece[0] === piece[0] && this.selectedPiece[1] === piece[1]) {
+        this.selectedPiece = {} as Piece;
       } else {
-        this.selectedPiece = index;
+        this.selectedPiece = piece;
       }
     },
     addToTrain(trainToAdd: any) {
-      if (this.selectedPiece > -1) {
-        const pieceToAdd = this.myPieces[this.selectedPiece];
+      if (!isUndefined(this.selectedPiece[0])) {
         const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle
           : trainToAdd.pieces[trainToAdd.pieces.length - 1];
-        if (pieceToCompare[1] !== pieceToAdd[0]) {
+        if (pieceToCompare[1] !== this.selectedPiece[0]) {
           this.snackbar.text = 'Invalid move.';
           this.snackbar.show = true;
         } else {
-          trainToAdd.pieces.push(pieceToAdd);
+          trainToAdd.pieces.push(this.selectedPiece);
           if (trainToAdd.owner === this.player.name) {
             // eslint-disable-next-line no-param-reassign
             trainToAdd.hasTrain = false;
           }
-          this.myPieces.splice(this.selectedPiece, 1);
-          this.player.points -= (pieceToAdd[0] + pieceToAdd[1]);
-          this.selectedPiece = -1;
+          this.myPieces.splice(this.selectedPieceIndex, 1);
+          this.player.points -= (this.selectedPiece[0] + this.selectedPiece[1]);
+          this.selectedPiece = {} as Piece;
           this.hasPlayedOrAddedTrain = true;
-          this.hasPlayedDouble = pieceToAdd[0] === pieceToAdd[1];
+          this.hasPlayedDouble = this.selectedPiece[0] === this.selectedPiece[1];
         }
       }
     },
@@ -286,6 +293,11 @@ export default Vue.extend({
     },
   },
   computed: {
+    selectedPieceIndex() {
+      return findIndex(this.myPieces, (piece: Piece) => {
+        return this.selectedPiece[0] === piece[0] && this.selectedPiece[1] === piece[1];
+      });
+    },
     myTrain() {
       return this.board.trains.find((train: any) => train.owner === this.player.name);
     },

@@ -47,7 +47,6 @@ export default Vue.extend({
   props: {
     values: Object as () => Piece,
     selected: Boolean,
-    index: Number,
     flippable: Boolean,
   },
   data() {
@@ -58,10 +57,10 @@ export default Vue.extend({
   },
   methods: {
     flip() {
-      this.$emit('flipPiece', this.index);
+      this.$emit('flipPiece');
     },
     selectPiece() {
-      this.$emit('selectPiece', this.index);
+      this.$emit('selectPiece');
     },
   },
 });
