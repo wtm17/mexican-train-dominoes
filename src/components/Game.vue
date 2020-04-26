@@ -2,7 +2,7 @@
   <div>
     <div class="d-flex flex-column">
       <transition name="scroll-y-transition" appear>
-        <div v-if="hasUnresolvedDouble" class="unresolved-double-message">
+        <div v-if="player.isTurn && hasUnresolvedDouble" class="unresolved-double-message">
           <v-chip color="secondary"
                   label
                   text-color="white">
@@ -56,7 +56,7 @@
             @addToTrain="addToTrain(train)"
       />
     </div>
-    <h3>Your Pieces ({{ player.points}} pts)</h3>
+    <h3>Your Pieces ({{ myPoints }} pts)</h3>
     <div class="d-flex flex-column">
       <draggable v-model="myPieces"
                 class="d-inline-flex flex-wrap"
@@ -103,15 +103,52 @@
         <v-card-text class="pa-5">
           <h3 class="overline">Results</h3>
           <v-divider></v-divider>
-          <ol>
-            <li v-for="player in finalRankings" :key="player.id" class="title">
-              {{ player.name }} - {{ player.points }}pts
-            </li>
-          </ol>
+          <v-simple-table light class="mx-auto">
+            <template v-slot:default>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    Rank
+                  </th>
+                  <th scope="col">
+                    Player
+                  </th>
+                  <th v-for="gameNumber in (player.history || []).length + 1"
+                      :key="gameNumber"
+                      scope="col">
+                    Game {{ gameNumber }}
+                  </th>
+                  <th scope="col">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(player, index) in finalRankings" :key="player.id">
+                  <td class="text-left">{{ index + 1 }}</td>
+                  <td class="text-left">{{ player.name }}</td>
+                  <td class="text-left"
+                      v-for="previousScore in (player.history || [])"
+                      :key="previousScore">
+                    {{ previousScore }}
+                  </td>
+                  <td class="text-left">{{ getPiecesPoints(player.pieces) }}</td>
+                  <td class="text-left font-weight-bold total-col">
+                    {{ getPlayerTotalPoints(player) }}
+                  </td>
+                </tr>
+              </tbody>
+            </template>
+          </v-simple-table>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="endGame()">End Game</v-btn>
+          <v-btn color="blue darken-1" v-if="nextGameId" text @click="joinNextGame()">
+            Join Next Game
+          </v-btn>
+          <v-btn color="blue darken-1" v-else-if="player.isHost" text @click="startNewGame()">
+            Start New Game
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -138,6 +175,8 @@ import cloneDeep from 'lodash/cloneDeep';
 import isUndefined from 'lodash/isUndefined';
 import findIndex from 'lodash/findIndex';
 import sortBy from 'lodash/sortBy';
+import sum from 'lodash/sum';
+import sumBy from 'lodash/sumBy';
 import Domino from './Domino.vue';
 import Train from './Train.vue';
 import {
@@ -161,6 +200,7 @@ export default Vue.extend({
     players: Array as () => Player[],
     pool: Array as () => Piece[],
     pieces: Number,
+    nextGameId: String,
   },
   data: () => ({
     selectedPiece: {} as Piece,
@@ -181,8 +221,6 @@ export default Vue.extend({
       const index = Math.floor(Math.random() * this.pool.length);
       const piece = this.pool[index];
       pieces.push(piece);
-      // eslint-disable-next-line no-param-reassign
-      player.points += (piece[0] + piece[1]);
       this.pool.splice(index, 1);
       this.hasDrawn = true;
     },
@@ -191,12 +229,15 @@ export default Vue.extend({
       train.hasTrain = true;
       train.owner = `Mexican${this.board.trains.length}`;
       this.board.trains.push(train);
+      if (this.selectedPiece[0] === this.board.middle![1]) {
+        this.addToTrain(train);
+      }
     },
     endTurn() {
       if (!this.canEndTurn) {
         this.snackbar.text = 'You must play a non-double piece or draw.';
         this.snackbar.show = true;
-      } else if (this.hasPlayedDouble && !this.unresolvedDoubleDialog) {
+      } else if (this.hasPlayedDouble && this.myPieces.length > 0 && !this.unresolvedDoubleDialog) {
         this.unresolvedDoubleDialog = true;
       } else {
         this.unresolvedDoubleDialog = false;
@@ -225,6 +266,30 @@ export default Vue.extend({
     endGame() {
       this.$router.push({
         name: 'start',
+      });
+    },
+    startNewGame() {
+      if (this.player.isHost) {
+        // Add points to history and clear pieces
+        const newPlayers = this.players.map((player: Player) => {
+          const newPlayer = cloneDeep(player);
+          newPlayer.history = cloneDeep(player.history) || [];
+          newPlayer.history.push(this.getPiecesPoints(player.pieces));
+          newPlayer.pieces = [];
+          newPlayer.isWinner = false;
+          newPlayer.isTurn = false;
+          return newPlayer;
+        });
+        this.$emit('startNewGame', newPlayers);
+      }
+    },
+    joinNextGame() {
+      this.$router.push({
+        name: 'game',
+        params: {
+          gameId: this.nextGameId,
+          playerId: this.$route.params.playerId,
+        },
       });
     },
     flipPiece(piece: Piece) {
@@ -260,13 +325,14 @@ export default Vue.extend({
             trainToAdd.hasTrain = false;
           }
           this.myPieces.splice(this.selectedPieceIndex, 1);
-          this.player.points -= (this.selectedPiece[0] + this.selectedPiece[1]);
 
           if (this.selectedPiece[0] === this.selectedPiece[1]) {
             this.hasPlayedDouble = true;
             this.hasPlayedNonDouble = false;
             // eslint-disable-next-line no-param-reassign
             trainToAdd.hasUnresolvedDouble = true;
+            // Reset has drawn as player may need to draw again
+            this.hasDrawn = false;
           } else {
             this.hasPlayedNonDouble = true;
             this.hasPlayedDouble = false;
@@ -302,8 +368,6 @@ export default Vue.extend({
       // eslint-disable-next-line no-param-reassign
       highestDouble.player.isTurn = true;
       highestDouble.player.pieces.splice(highestDouble.pieceIndex, 1);
-      // eslint-disable-next-line no-param-reassign
-      highestDouble.player.points -= (highestDouble.piece[0] + highestDouble.piece[1]);
 
       // Set My Pieces
       this.myPieces = cloneDeep(this.player.pieces);
@@ -322,6 +386,15 @@ export default Vue.extend({
       this.hasPlayedDouble = false;
       this.hasDrawn = false;
     },
+    getPiecesPoints(pieces: Piece[]) {
+      // eslint-disable-next-line arrow-body-style
+      return sumBy(pieces, (piece: Piece) => {
+        return piece[0] + piece[1];
+      });
+    },
+    getPlayerTotalPoints(player: Player) {
+      return this.getPiecesPoints(player.pieces) + sum(player.history);
+    },
   },
   computed: {
     selectedPieceIndex() {
@@ -333,16 +406,21 @@ export default Vue.extend({
     myTrain() {
       return this.board.trains.find((train: any) => train.owner === this.player.name);
     },
+    myPoints() {
+      const vm = this as any;
+      return vm.getPiecesPoints(this.myPieces);
+    },
     canEndTurn() {
       const vm = this as any;
-      return this.hasPlayedNonDouble || this.hasDrawn;
+      return this.hasPlayedNonDouble || this.hasDrawn || this.myPieces.length === 0;
     },
     canDraw() {
-      return !this.hasDrawn && !this.hasPlayedNonDouble;
+      return !this.hasDrawn && !this.hasPlayedNonDouble && this.myPieces.length > 0;
     },
     canStartNewTrain() {
       const vm = this as any;
-      return !vm.hasUnresolvedDouble
+      return this.myPieces.length > 0
+        && !vm.hasUnresolvedDouble
         && !this.hasPlayedNonDouble
         && !this.hasPlayedDouble
         && this.board.middle
@@ -355,7 +433,8 @@ export default Vue.extend({
       return this.players.find((player: Player) => player.isWinner) || {};
     },
     finalRankings() {
-      return sortBy(this.players, ['points']);
+      const vm: any = this;
+      return sortBy(this.players, [vm.getPlayerTotalPoints]);
     },
     hasUnresolvedDouble() {
       return this.board.trains.some((train: ITrain) => train.hasUnresolvedDouble);
@@ -394,5 +473,8 @@ export default Vue.extend({
     left: 50%;
     margin-left: -100px;
     z-index: 1;
+  }
+  .total-col {
+    background-color: #c1bbbb59;
   }
 </style>

@@ -25,5 +25,5 @@ export const PLAYER: Player = {
   isWinner: false,
   name: '',
   pieces: [],
-  points: 0,
+  history: [],
 };

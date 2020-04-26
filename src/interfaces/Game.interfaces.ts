@@ -2,6 +2,7 @@ export interface Game {
   board: Board;
   players: Player[],
   pool: Piece[];
+  nextGameId?: string;
 }
 
 export interface Board {
@@ -23,7 +24,7 @@ export interface Player {
   isWinner: boolean;
   name: string;
   pieces: Piece[],
-  points: number;
+  history: number[]
 }
 
 export interface Piece {
