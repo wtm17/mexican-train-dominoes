@@ -62,7 +62,8 @@
                 class="d-inline-flex flex-wrap"
                 group="pieces"
                 @start="drag=true"
-                @end="drag=false">
+                @end="drag=false"
+                :animation="200">
         <domino v-for="piece in myPieces"
                 :key="piece[0] + '-' + piece[1]"
                 class="mr-5"
