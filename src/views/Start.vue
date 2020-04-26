@@ -77,14 +77,14 @@ export default Vue.extend({
           value: this.$route.params.gameId,
           rules: [
             (v: string) => !!v || 'Game Id is required.',
-            (v: string) => v.match(/^[0-9a-zA-Z]+$/) || 'Please enter a valid Game Id.',
+            (v: string) => !!v.match(/^[0-9a-zA-Z]+$/) || 'Please enter a valid Game Id.',
           ],
         },
         playerName: {
           value: '',
           rules: [
             (v: string) => !!v || 'Name is required.',
-            (v: string) => v.match(/^[0-9a-zA-Z .!,]+$/) || 'Please remove invalid characters.',
+            (v: string) => !!v.match(/^[0-9a-zA-Z .!,]+$/) || 'Please remove invalid characters.',
             (v: string) => v.length <= 30 || 'Name is too long.',
           ],
         },
