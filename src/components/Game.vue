@@ -1,34 +1,45 @@
 <template>
   <div>
     <div class="d-flex flex-column">
-      <div class="actions">
-        <div class="d-flex flex-column" v-if="player.isTurn">
-          <v-chip class="turn-chip"
-                  color="pink"
+      <transition name="scroll-y-transition" appear>
+        <div v-if="hasUnresolvedDouble" class="unresolved-double-message">
+          <v-chip color="secondary"
                   label
                   text-color="white">
-            It's your turn!
+            You must play on the double!
           </v-chip>
-          <v-btn class="mt-1"
-                color="secondary"
-                @click="draw(player, myPieces)"
-                :disabled="!canDraw">
-            Draw
-          </v-btn>
-          <v-btn class="mt-1"
-                color="secondary"
-                @click="startNewTrain()"
-                :disabled="!canStartNewTrain">
-            Start New Train
-          </v-btn>
-          <v-btn class="mt-1"
-                color="secondary"
-                @click="endTurn()"
-                :disabled="!canEndTurn">
-            End Turn
-          </v-btn>
         </div>
-      </div>
+      </transition>
+      <transition name="scroll-y-transition" appear>
+        <div class="actions" v-if="player.isTurn">
+          <div class="d-flex flex-column">
+            <v-chip class="turn-chip"
+                    color="pink"
+                    label
+                    text-color="white">
+              It's your turn!
+            </v-chip>
+            <v-btn class="mt-1"
+                  color="secondary"
+                  @click="draw(player, myPieces)"
+                  :disabled="!canDraw">
+              Draw
+            </v-btn>
+            <v-btn class="mt-1"
+                  color="secondary"
+                  @click="startNewTrain()"
+                  :disabled="!canStartNewTrain">
+              Start New Train
+            </v-btn>
+            <v-btn class="mt-1"
+                  color="secondary"
+                  @click="endTurn()"
+                  :disabled="!canEndTurn">
+              End Turn
+            </v-btn>
+          </div>
+        </div>
+      </transition>
       <h3>Middle Piece</h3>
       <domino v-if="board.middle"
               :values="board.middle" />
@@ -41,8 +52,7 @@
             :pieces="train.pieces"
             :players="players"
             :show-add="player.isTurn"
-            :disable-add="hasPlayedOrAddedTrain && !hasPlayedDouble"
-            @addTrain="addTrain()"
+            :disable-add="hasPlayedNonDouble || (hasUnresolvedDouble && !train.hasUnresolvedDouble)"
             @addToTrain="addToTrain(train)"
       />
     </div>
@@ -129,7 +139,12 @@ import findIndex from 'lodash/findIndex';
 import sortBy from 'lodash/sortBy';
 import Domino from './Domino.vue';
 import Train from './Train.vue';
-import { Board, Player, Piece } from '../interfaces/Game.interfaces';
+import {
+  Board,
+  Player,
+  Piece,
+  Train as ITrain,
+} from '../interfaces/Game.interfaces';
 import { TRAIN } from '../interfaces/Game.constants';
 
 export default Vue.extend({
@@ -148,7 +163,7 @@ export default Vue.extend({
   },
   data: () => ({
     selectedPiece: {} as Piece,
-    hasPlayedOrAddedTrain: false,
+    hasPlayedNonDouble: false,
     hasPlayedDouble: false,
     hasDrawn: false,
     snackbar: {
@@ -170,10 +185,6 @@ export default Vue.extend({
       this.pool.splice(index, 1);
       this.hasDrawn = true;
     },
-    addTrain() {
-      this.myTrain!.hasTrain = true;
-      this.hasPlayedOrAddedTrain = true;
-    },
     startNewTrain() {
       const train = cloneDeep(TRAIN);
       train.hasTrain = true;
@@ -182,21 +193,24 @@ export default Vue.extend({
     },
     endTurn() {
       if (!this.canEndTurn) {
-        this.snackbar.text = 'You must play a piece or add a train.';
+        this.snackbar.text = 'You must play a non-double piece or draw.';
         this.snackbar.show = true;
       } else if (this.hasPlayedDouble && !this.unresolvedDoubleDialog) {
         this.unresolvedDoubleDialog = true;
       } else {
         this.unresolvedDoubleDialog = false;
-        this.hasPlayedOrAddedTrain = false;
-        this.hasDrawn = false;
-        this.hasPlayedDouble = false;
 
         // Check if player has won
         if (this.myPieces.length === 0) {
           this.player.isWinner = true;
           this.player.isTurn = false;
         } else {
+          // Check if player needs to add a train
+          if (!this.hasPlayedNonDouble) {
+            this.myTrain!.hasTrain = true;
+          }
+          this.resetTurn();
+
           // Find next player's turn
           const nextPlayerId = this.player.id === this.players.length ? 1 : this.player.id + 1;
           this.players.forEach((player: Player) => {
@@ -231,9 +245,9 @@ export default Vue.extend({
         this.selectedPiece = piece;
       }
     },
-    addToTrain(trainToAdd: any) {
+    addToTrain(trainToAdd: ITrain) {
       if (!isUndefined(this.selectedPiece[0])) {
-        const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle
+        const pieceToCompare = trainToAdd.pieces.length === 0 ? this.board.middle!
           : trainToAdd.pieces[trainToAdd.pieces.length - 1];
         if (pieceToCompare[1] !== this.selectedPiece[0]) {
           this.snackbar.text = 'Invalid move.';
@@ -246,9 +260,19 @@ export default Vue.extend({
           }
           this.myPieces.splice(this.selectedPieceIndex, 1);
           this.player.points -= (this.selectedPiece[0] + this.selectedPiece[1]);
+
+          if (this.selectedPiece[0] === this.selectedPiece[1]) {
+            this.hasPlayedDouble = true;
+            this.hasPlayedNonDouble = false;
+            // eslint-disable-next-line no-param-reassign
+            trainToAdd.hasUnresolvedDouble = true;
+          } else {
+            this.hasPlayedNonDouble = true;
+            this.hasPlayedDouble = false;
+            // eslint-disable-next-line no-param-reassign
+            trainToAdd.hasUnresolvedDouble = false;
+          }
           this.selectedPiece = {} as Piece;
-          this.hasPlayedOrAddedTrain = true;
-          this.hasPlayedDouble = this.selectedPiece[0] === this.selectedPiece[1];
         }
       }
     },
@@ -282,7 +306,7 @@ export default Vue.extend({
 
       // Set My Pieces
       this.myPieces = cloneDeep(this.player.pieces);
-      this.hasDrawn = false;
+      this.resetTurn();
     },
     updateGame() {
       this.player.pieces = this.myPieces;
@@ -291,6 +315,11 @@ export default Vue.extend({
         players: this.players,
         pool: this.pool,
       });
+    },
+    resetTurn() {
+      this.hasPlayedNonDouble = false;
+      this.hasPlayedDouble = false;
+      this.hasDrawn = false;
     },
   },
   computed: {
@@ -305,13 +334,16 @@ export default Vue.extend({
     },
     canEndTurn() {
       const vm = this as any;
-      return this.hasPlayedOrAddedTrain || (this.hasDrawn && vm.myTrain.hasTrain);
+      return this.hasPlayedNonDouble || this.hasDrawn;
     },
     canDraw() {
-      return !this.hasDrawn && (!this.hasPlayedOrAddedTrain || this.hasPlayedDouble);
+      return !this.hasDrawn && !this.hasPlayedNonDouble;
     },
     canStartNewTrain() {
-      return !this.hasPlayedOrAddedTrain
+      const vm = this as any;
+      return !vm.hasUnresolvedDouble
+        && !this.hasPlayedNonDouble
+        && !this.hasPlayedDouble
         && this.board.middle
         // eslint-disable-next-line arrow-body-style
         && !!this.myPieces.find((piece: Piece) => {
@@ -323,6 +355,9 @@ export default Vue.extend({
     },
     finalRankings() {
       return sortBy(this.players, ['points']);
+    },
+    hasUnresolvedDouble() {
+      return this.board.trains.some((train: ITrain) => train.hasUnresolvedDouble);
     },
   },
   mounted() {
@@ -350,5 +385,13 @@ export default Vue.extend({
     position: fixed;
     right: 20px;
     width: 200px;
+    z-index: 1;
+  }
+  .unresolved-double-message {
+    position: fixed;
+    width: 200px;
+    left: 50%;
+    margin-left: -100px;
+    z-index: 1;
   }
 </style>

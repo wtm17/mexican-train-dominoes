@@ -11,6 +11,7 @@ export interface Board {
 
 export interface Train {
   hasTrain: boolean;
+  hasUnresolvedDouble: boolean;
   owner: string;
   pieces: Piece[];
 }

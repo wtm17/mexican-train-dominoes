@@ -2,13 +2,6 @@
   <div class="train d-inline-flex flex-wrap align-center">
     <div class="d-flex flex-column mr-5">
       <v-icon v-if="hasTrain" :color="trainColor" dark>mdi-train</v-icon>
-      <v-btn v-else-if="isOwner && showAdd"
-             :disabled="disableAdd"
-             color="secondary"
-             @click="addTrain()"
-             x-small>
-        Train
-      </v-btn>
       <h2>
         <v-icon color="pink" v-if="player.isTurn">mdi-star</v-icon>
         {{ owner }}
@@ -71,9 +64,6 @@ export default Vue.extend({
   methods: {
     addToTrain() {
       this.$emit('addToTrain');
-    },
-    addTrain() {
-      this.$emit('addTrain');
     },
   },
 });

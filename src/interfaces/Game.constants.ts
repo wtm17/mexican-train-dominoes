@@ -13,6 +13,7 @@ export const GAME: Game = {
 
 export const TRAIN: Train = {
   hasTrain: false,
+  hasUnresolvedDouble: false,
   owner: '',
   pieces: [],
 };
