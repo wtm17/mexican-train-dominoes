@@ -21,7 +21,7 @@
             </v-chip>
             <v-btn class="mt-1"
                   color="secondary"
-                  @click="draw(player, myPieces)"
+                  @click="drawMyPiece()"
                   :disabled="!canDraw">
               Draw
             </v-btn>
@@ -217,11 +217,15 @@ export default Vue.extend({
   }),
 
   methods: {
-    draw(player: any, pieces: Piece[]) {
+    draw(): Piece {
       const index = Math.floor(Math.random() * this.pool.length);
       const piece = this.pool[index];
-      pieces.push(piece);
       this.pool.splice(index, 1);
+      return piece;
+    },
+    drawMyPiece() {
+      const piece = this.draw();
+      this.myPieces.push(piece);
       this.hasDrawn = true;
     },
     startNewTrain() {
@@ -352,9 +356,9 @@ export default Vue.extend({
       };
       this.players.forEach((player: any) => {
         for (let i = 0; i < this.pieces; i += 1) {
-          this.draw(player, player.pieces);
+          const piece = this.draw();
+          player.pieces.push(piece);
           // Check if piece is highest double
-          const piece = player.pieces[player.pieces.length - 1];
           if (piece[0] === piece[1] && piece[0] > (highestDouble.piece[0] || 0)) {
             highestDouble.piece = piece;
             highestDouble.player = player;
