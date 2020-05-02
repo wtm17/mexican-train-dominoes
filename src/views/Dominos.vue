@@ -1,10 +1,10 @@
 <template>
   <v-container>
-    <v-row v-for="i in 13" :key="i">
-      <v-col v-for="j in i" :key="j" cols="2">
-        <domino :values="{0: (i - 1), 1: (j - 1)}" />
-      </v-col>
-    </v-row>
+    <div class="d-flex flex-column">
+      <div v-for="i in 13" :key="i" class="d-inline-flex flex-wrap">
+        <domino class="mr-1" v-for="j in i" :key="j" :values="{0: (i - 1), 1: (j - 1)}" />
+      </div>
+    </div>
   </v-container>
 </template>
 

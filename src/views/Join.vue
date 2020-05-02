@@ -8,7 +8,7 @@
                elevation="2"
                class="mx-auto mt-4"
                v-if="player.isHost">
-        Inite others to join with the following link<br>
+        Invite others to join with the following link<br>
         {{ inviteLink }}
       </v-alert>
       <v-simple-table light class="mx-auto">
