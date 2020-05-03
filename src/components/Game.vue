@@ -354,8 +354,8 @@ export default Vue.extend({
         pieceIndex: 0,
         player: {} as Player,
       };
-      this.players.forEach((player: any) => {
-        for (let i = 0; i < this.pieces; i += 1) {
+      for (let i = 0; i < this.pieces; i += 1) {
+        this.players.forEach((player: any) => {
           const piece = this.draw();
           player.pieces.push(piece);
           // Check if piece is highest double
@@ -364,8 +364,8 @@ export default Vue.extend({
             highestDouble.player = player;
             highestDouble.pieceIndex = i;
           }
-        }
-      });
+        });
+      }
 
       // Play the highest double
       this.board.middle = highestDouble.piece;
