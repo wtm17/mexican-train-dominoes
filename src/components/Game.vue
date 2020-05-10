@@ -218,6 +218,13 @@ export default Vue.extend({
 
   methods: {
     draw(): Piece {
+      if (this.pool.length === 0) {
+        this.board.trains.forEach((train: ITrain) => {
+          train.pieces.slice(0, -2).forEach((piece: Piece) => {
+            this.pool.push(piece);
+          });
+        });
+      }
       const index = Math.floor(Math.random() * this.pool.length);
       const piece = this.pool[index];
       this.pool.splice(index, 1);
